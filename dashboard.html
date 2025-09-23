@@ -1,0 +1,4380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Social Service</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --primary-dark: #3a0ca3;
+            --secondary: #7209b7;
+            --success: #4cc9f0;
+            --warning: #f72585;
+            --danger: #e63946;
+            --info: #560bad;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --gray-100: #f8f9fa;
+            --gray-200: #e9ecef;
+            --gray-300: #dee2e6;
+            --gray-400: #ced4da;
+            --gray-500: #adb5bd;
+            --gray-600: #6c757d;
+            --gray-700: #495057;
+            --gray-800: #343a40;
+            --gray-900: #212529;
+            --border: #e0e0e0;
+            --text: #333333;
+            --text-light: #666666;
+            --sidebar-width: 280px;
+            --sidebar-collapsed-width: 80px;
+            --header-height: 70px;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
+            --sidebar-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --light: #121212;
+            --gray-100: #1a1a1a;
+            --gray-200: #222222;
+            --gray-300: #2d2d2d;
+            --gray-400: #3d3d3d;
+            --gray-500: #5c5c5c;
+            --gray-600: #767676;
+            --gray-700: #909090;
+            --gray-800: #ababab;
+            --gray-900: #c6c6c6;
+            --border: #444;
+            --text: #f0f0f0;
+            --text-light: #aaaaaa;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            --sidebar-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--gray-100);
+            color: var(--text);
+            transition: var(--transition);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--light);
+            box-shadow: var(--sidebar-shadow);
+            transition: var(--transition);
+            position: fixed;
+            height: 100vh;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            left: -280px;
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            text-align: center;
+            height: var(--header-height);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .close-sidebar {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-sidebar:hover {
+            background: var(--gray-200);
+        }
+
+        .sidebar-menu {
+            padding: 20px 0;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--text);
+            text-decoration: none;
+            transition: var(--transition);
+            border-left: 4px solid transparent;
+            margin: 5px 15px;
+            border-radius: 8px;
+        }
+
+        .menu-item:hover, .menu-item.active {
+            background: rgba(67, 97, 238, 0.1);
+            border-left: 4px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .menu-item i {
+            margin-right: 12px;
+            font-size: 18px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .menu-item .badge {
+            margin-left: auto;
+            background: var(--danger);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 0;
+            transition: var(--transition);
+        }
+
+        /* Top Navbar */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 25px;
+            background: var(--light);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            height: var(--header-height);
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle-sidebar {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            margin-right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .toggle-sidebar:hover {
+            background: var(--gray-200);
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background: var(--gray-200);
+        }
+
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-bell:hover {
+            background: var(--gray-200);
+        }
+
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .user-profile {
+            display: none;
+        }
+
+        /* Three dot menu */
+        .three-dot-menu {
+            position: relative;
+            margin-left: 10px;
+        }
+
+        .three-dot-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 20px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .three-dot-btn:hover {
+            background: var(--gray-200);
+        }
+
+        .three-dot-content {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: var(--light);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px 0;
+            width: 200px;
+            display: none;
+            z-index: 1001;
+        }
+
+        .three-dot-content a {
+            display: flex;
+            align-items: center;
+            padding: 10px 20px;
+            color: var(--text);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .three-dot-content a:hover {
+            background: var(--gray-200);
+        }
+
+        .three-dot-content a i {
+            margin-right: 10px;
+            width: 18px;
+        }
+
+        .three-dot-menu.active .three-dot-content {
+            display: block;
+        }
+
+        /* Dashboard Content */
+        .content-wrapper {
+            padding: 25px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .page-subtitle {
+            color: var(--text-light);
+            font-size: 16px;
+            margin-top: 5px;
+        }
+
+        /* Card Container - সব ডিভাইসে 2fr রাখার জন্য সংশোধন */
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* সব ডিভাইসে 2 কলাম */
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--light);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 24px;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+        }
+
+        .card-icon.users {
+            background: linear-gradient(45deg, var(--primary), var(--primary-light));
+        }
+
+        .card-icon.orders {
+            background: linear-gradient(45deg, var(--success), #3a86ff);
+        }
+
+        .card-icon.revenue {
+            background: linear-gradient(45deg, #ff9e00, #ffd166);
+        }
+
+        .card-icon.pending {
+            background: linear-gradient(45deg, var(--warning), #f15bb5);
+        }
+
+        .card-icon.processing {
+            background: linear-gradient(45deg, #560bad, #7209b7);
+        }
+
+        .card-icon.payment-pending {
+            background: linear-gradient(45deg, var(--danger), #e63946);
+        }
+
+        .card-value {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 5px;
+        }
+
+        .card-text {
+            color: var(--text-light);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+        }
+
+        .card-trend {
+            margin-left: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .trend-up {
+            color: #4cc9f0;
+        }
+
+        .trend-down {
+            color: var(--danger);
+        }
+
+        /* Tables */
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 20px;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            background: var(--light);
+            border: 1px solid var(--border);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .table th, .table td {
+            padding: 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table th {
+            background: var(--gray-200);
+            color: var(--text);
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            padding: 16px;
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .table tr:hover {
+            background: rgba(67, 97, 238, 0.05);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(76, 201, 240, 0.15);
+            color: #4cc9f0;
+        }
+
+        .badge-warning {
+            background: rgba(247, 37, 133, 0.15);
+            color: #f72585;
+        }
+
+        .badge-danger {
+            background: rgba(230, 57, 70, 0.15);
+            color: #e63946;
+        }
+
+        .badge-info {
+            background: rgba(86, 11, 173, 0.15);
+            color: #560bad;
+        }
+
+        .badge-pending {
+            background: rgba(247, 37, 133, 0.15);
+            color: #f72585;
+        }
+        
+        .badge-processing {
+            background: rgba(86, 11, 173, 0.15);
+            color: #560bad;
+        }
+        
+        .badge-completed {
+            background: rgba(76, 201, 240, 0.15);
+            color: #4cc9f0;
+        }
+        
+        .badge-cancelled {
+            background: rgba(230, 57, 70, 0.15);
+            color: #e63946;
+        }
+
+        .badge-primary {
+            background: rgba(67, 97, 238, 0.15);
+            color: var(--primary);
+        }
+
+        .user-with-badge {
+            display: flex;
+            align-items: center;
+        }
+
+        .verified-badge {
+            color: #4361ee;
+            margin-left: 5px;
+            font-size: 14px;
+        }
+
+        /* Forms */
+        .form-card {
+            background: var(--light);
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+
+        .form-col {
+            flex: 0 0 100%;
+            max-width: 100%;
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .form-col {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #c1121f;
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #3a86ff;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #b5179e;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1050;
+            max-width: 350px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.show {
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .toast.warning {
+            background: var(--warning);
+        }
+
+        .toast.info {
+            background: var(--info);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1100;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: var(--light);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: modalFadeIn 0.3s;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--light);
+            z-index: 10;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-right: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-light);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            background: var(--gray-200);
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            position: sticky;
+            bottom: 0;
+            background: var(--light);
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--light);
+            color: var(--text);
+            transition: var(--transition);
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* Status Select Dropdown */
+        .status-select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--light);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        /* Payment Action Buttons */
+        .payment-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Service Edit Form */
+        .service-edit-form {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .service-edit-input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--light);
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        /* Completion Message Box */
+        .completion-message-box {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: rgba(76, 201, 240, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid var(--success);
+        }
+
+        /* Order Details Grid */
+        .order-details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .order-detail-card {
+            background: var(--light);
+            border-radius: 8px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .order-detail-card h4 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .order-detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .order-detail-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .order-detail-label {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .order-detail-value {
+            color: var(--text-light);
+            text-align: right;
+        }
+
+        /* Notification Panel */
+        .notification-panel {
+            position: fixed;
+            top: var(--header-height);
+            right: -350px;
+            width: 350px;
+            height: calc(100vh - var(--header-height));
+            background: var(--light);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            z-index: 999;
+            transition: var(--transition);
+            overflow-y: auto;
+            border-left: 1px solid var(--border);
+        }
+
+        .notification-panel.open {
+            right: 0;
+        }
+
+        .notification-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: var(--light);
+            z-index: 10;
+        }
+
+        .notification-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .notification-list {
+            padding: 10px 0;
+        }
+
+        .notification-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .notification-item:hover {
+            background: var(--gray-200);
+        }
+
+        .notification-item.unread {
+            background: rgba(67, 97, 238, 0.05);
+        }
+
+        .notification-content {
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .notification-content a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+
+        .notification-time {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .notification-clear {
+            padding: 10px 20px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Login Page */
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--light);
+            border-radius: 12px;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            overflow: hidden;
+        }
+
+        .login-header {
+            padding: 30px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+        }
+
+        .login-logo i {
+            color: var(--primary);
+            font-size: 40px;
+        }
+
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .login-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .login-body {
+            padding: 30px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .login-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-footer {
+            padding: 20px 30px;
+            text-align: center;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        /* Error States */
+        .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .error-state i {
+            font-size: 48px;
+            color: var(--danger);
+            margin-bottom: 15px;
+        }
+
+        .error-state h3 {
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            min-height: 200px;
+            flex-direction: column;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--gray-300);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            color: var(--text-light);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Schedule Notification Styles */
+        .day-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .day-selector label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px 12px;
+            background: var(--gray-200);
+            border-radius: 8px;
+            transition: var(--transition);
+        }
+
+        .day-selector label:hover {
+            background: var(--gray-300);
+        }
+
+        .day-selector input[type="checkbox"] {
+            margin-right: 5px;
+        }
+
+        .schedule-list {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .schedule-item {
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: var(--light);
+        }
+
+        .schedule-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .schedule-item-title {
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .schedule-item-date {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        .schedule-item-message {
+            margin-bottom: 10px;
+            color: var(--text);
+        }
+
+        .schedule-item-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* Tabs for notification types */
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 1200px) {
+            .card-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                left: -280px;
+            }
+            
+            .sidebar.active {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+            
+            .toggle-sidebar {
+                display: flex;
+            }
+            
+            .card-container {
+                grid-template-columns: repeat(2, 1fr); 
+            }
+        }
+
+        @media (max-width: 768px) {
+            .card-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .order-details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .payment-actions {
+                flex-direction: column;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .nav-left h4 {
+                font-size: 18px;
+            }
+            
+            .content-wrapper {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .card-value {
+                font-size: 28px;
+            }
+            
+            .notification-panel {
+                width: 100%;
+                right: -100%;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .card-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .top-nav {
+                padding: 0 15px;
+            }
+            
+            .card-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .card-header .btn-group {
+                align-self: flex-end;
+            }
+            
+            .table th, .table td {
+                padding: 12px 10px;
+            }
+            
+            .modal-content {
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-group .btn {
+                width: 100%;
+            }
+            
+            .day-selector {
+                flex-direction: column;
+            }
+            
+            .schedule-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .card-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .card {
+                padding: 15px;
+            }
+            
+            .card-value {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 350px) {
+            .card-container {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <!-- Login Page (initially hidden) -->
+    <div id="login-page" class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-hands-helping"></i>
+                </div>
+                <h2 class="login-title">Social Service</h2>
+                <p class="login-subtitle">iATZ Admin Dashboard</p>
+            </div>
+            <div class="login-body">
+                <form class="login-form" id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email Address</label>
+                        <input type="email" class="form-control" id="login-email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" class="form-control" id="login-password" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn" style="width: 100%">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+            </div>
+            <div class="login-footer">
+                <p>&copy; 2025 iA TECH ZONE All rights reserved.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="admin-container" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div></div> <!-- Empty div for spacing -->
+                <button class="close-sidebar" id="close-sidebar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="sidebar-menu">
+                <a href="#" class="menu-item active" data-page="dashboard">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="menu-item" data-page="users">
+                    <i class="fas fa-users"></i>
+                    <span>Users</span>
+                    <span class="badge" id="users-badge">0</span>
+                </a>
+                <a href="#" class="menu-item" data-page="orders">
+                    <i class="fas fa-clipboard-list"></i>
+                    <span>Orders</span>
+                    <span class="badge" id="orders-badge">0</span>
+                </a>
+                <a href="#" class="menu-item" data-page="services">
+                    <i class="fas fa-cog"></i>
+                    <span>Services</span>
+                </a>
+                <a href="#" class="menu-item" data-page="payments">
+                    <i class="fas fa-money-bill-wave"></i>
+                    <span>Payments</span>
+                    <span class="badge" id="payments-badge">0</span>
+                </a>
+                <a href="#" class="menu-item" data-page="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span>Notifications</span>
+                </a>
+            </div>
+            <div class="sidebar-footer">
+                <p>v1.0.0 &copy; 2023</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Navbar -->
+            <div class="top-nav">
+                <div class="nav-left">
+                    <button class="toggle-sidebar" id="toggle-sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h4 id="current-page-title">Dashboard</h4>
+                </div>
+                <div class="nav-right">
+                    <button class="theme-toggle" id="theme-toggle">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                    </button>
+                    
+                    <div class="notification-bell" id="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-count" id="notification-count">0</span>
+                    </div>
+                    
+                    <!-- Three dot menu with only Profile and Logout options -->
+                    <div class="three-dot-menu" id="three-dot-menu">
+                        <button class="three-dot-btn">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <div class="three-dot-content">
+                            <a href="#" data-page="settings"><i class="fas fa-cogs"></i> Settings</a>
+                            <a href="#" id="profile-btn"><i class="fas fa-user"></i> Profile</a>
+                            <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Panel -->
+            <div class="notification-panel" id="notification-panel">
+                <div class="notification-header">
+                    <h3 class="notification-title">Notifications</h3>
+                    <button class="modal-close">&times;</button>
+                </div>
+                <div class="notification-list" id="notification-list">
+                    <!-- Notifications will be loaded here -->
+                </div>
+                <div class="notification-clear">
+                    <button class="btn btn-sm" id="clear-notifications">Clear All</button>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="content-wrapper">
+                <!-- Dashboard Page -->
+                <div class="page-content" id="dashboard-page">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Dashboard Overview</h2>
+                            <p class="page-subtitle">Welcome back, <span id="admin-greeting">Admin</span>! Here's what's happening today.</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm"><i class="fas fa-download"></i> Export</button>
+                            <button class="btn btn-sm btn-outline" id="refresh-data"><i class="fas fa-sync-alt"></i> Refresh</button>
+                        </div>
+                    </div>
+
+                    <div class="card-container">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Total Users</h3>
+                                <div class="card-icon users">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                            </div>
+                            <h2 class="card-value" id="total-users">0</h2>
+                            <p class="card-text">
+                                <span class="trend-up" id="user-trend"><i class="fas fa-arrow-up"></i> 0%</span>
+                                <span class="card-trend">from last week</span>
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Total Orders</h3>
+                                <div class="card-icon orders">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                            </div>
+                            <h2 class="card-value" id="total-orders">0</h2>
+                            <p class="card-text">
+                                <span class="trend-up" id="order-trend"><i class="fas fa-arrow-up"></i> 0%</span>
+                                <span class="card-trend">from last week</span>
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Pending Orders</h3>
+                                <div class="card-icon pending">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                            </div>
+                            <h2 class="card-value" id="pending-orders">0</h2>
+                            <p class="card-text">
+                                <span class="trend-down" id="pending-trend"><i class="fas fa-arrow-down"></i> 0%</span>
+                                <span class="card-trend">awaiting processing</span>
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Processing Orders</h3>
+                                <div class="card-icon processing">
+                                    <i class="fas fa-cogs"></i>
+                                </div>
+                            </div>
+                            <h2 class="card-value" id="processing-orders">0</h2>
+                            <p class="card-text">
+                                <span class="trend-up" id="processing-trend"><i class="fas fa-arrow-up"></i> 0%</span>
+                                <span class="card-trend">currently processing</span>
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Pending Payment</h3>
+                                <div class="card-icon payment-pending">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                            </div>
+                            <h2 class="card-value" id="payment-pending">0</h2>
+                            <p class="card-text">
+                                <span class="trend-down" id="payment-trend"><i class="fas fa-arrow-down"></i> 0%</span>
+                                <span class="card-trend">awaiting approval</span>
+                            </p>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Total Revenue</h3>
+                                <div class="card-icon revenue">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </div>
+                            </div>
+                            <h2 class="card-value" id="total-revenue">0 ৳</h2>
+                            <p class="card-text">
+                                <span class="trend-up" id="revenue-trend"><i class="fas fa-arrow-up"></i> 0%</span>
+                                <span class="card-trend">this month</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Orders</h3>
+                            <button class="btn btn-sm" id="view-all-orders">
+                                <i class="fas fa-eye"></i> View All
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>User</th>
+                                        <th>Service</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-orders">
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="loading">
+                                                <div class="loading-spinner"></div>
+                                                <div class="loading-text">Loading orders...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Page -->
+                <div class="page-content" id="users-page" style="display: none;">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">User Management</h2>
+                            <p class="page-subtitle">Manage all registered users and their accounts</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" id="add-user-btn">
+                                <i class="fas fa-plus"></i> Add User
+                            </button>
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">All Users</h3>
+                            <div class="form-group" style="margin: 0; width: 300px;">
+                                <input type="text" id="user-search" class="form-control" placeholder="Search users...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Phone</th>
+                                        <th>Balance</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-list">
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="loading">
+                                                <div class="loading-spinner"></div>
+                                                <div class="loading-text">Loading users...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Orders Page -->
+                <div class="page-content" id="orders-page" style="display: none;">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Order Management</h2>
+                            <p class="page-subtitle">View and manage all customer orders</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">All Orders</h3>
+                            <div class="form-group" style="margin: 0; width: 300px;">
+                                <input type="text" id="order-search" class="form-control" placeholder="Search orders...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Order ID</th>
+                                        <th>User</th>
+                                        <th>Service</th>
+                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orders-list">
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="loading">
+                                                <div class="loading-spinner"></div>
+                                                <div class="loading-text">Loading orders...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Services Page -->
+                <div class="page-content" id="services-page" style="display: none;">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Service Management</h2>
+                            <p class="page-subtitle">Manage your service offerings</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm" id="add-service-btn">
+                                <i class="fas fa-plus"></i> Add Service
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">All Services</h3>
+                            <div class="form-group" style="margin: 0; width: 300px;">
+                                <input type="text" id="service-search" class="form-control" placeholder="Search services...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Name</th>
+                                        <th>Price</th>
+                                        <th>Category</th>
+                                        <th>Status</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="services-list">
+                                    <tr>
+                                        <td colspan="6">
+                                            <div class="loading">
+                                                <div class="loading-spinner"></div>
+                                                <div class="loading-text">Loading services...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payments Page -->
+                <div class="page-content" id="payments-page" style="display: none;">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Payment Management</h2>
+                            <p class="page-subtitle">View and manage payment transactions</p>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                            <button class="btn btn-sm btn-outline">
+                                <i class="fas fa-filter"></i> Filter
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">All Transactions</h3>
+                            <div class="form-group" style="margin: 0; width: 300px;">
+                                <input type="text" id="payment-search" class="form-control" placeholder="Search payments...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Transaction ID</th>
+                                        <th>User</th>
+                                        <th>Amount</th>
+                                        <th>Method</th>
+                                        <th>Status</th>
+                                        <th>Date</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payments-list">
+                                    <tr>
+                                        <td colspan="7">
+                                            <div class="loading">
+                                                <div class="loading-spinner"></div>
+                                                <div class="loading-text">Loading payments...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications Page -->
+                <div class="page-content" id="notifications-page" style="display: none;">
+                    <div class="page-header">
+                        <div>
+                            <h2 class="page-title">Notification Center</h2>
+                            <p class="page-subtitle">Send notifications to users</p>
+                        </div>
+                    </div>
+
+                    <!-- Tabs for different notification types -->
+                    <div class="tabs">
+                        <div class="tab active" data-tab="in-app">In-App Notifications</div>
+                        <div class="tab" data-tab="push">Push Notifications</div>
+                    </div>
+
+                    <!-- In-App Notifications Tab -->
+                    <div class="tab-content active" id="in-app-tab">
+                        <div class="form-card">
+                            <h3 class="card-title mb-4">Send In-App Notification</h3>
+                            <div class="form-group">
+                                <label>Target Users</label>
+                                <select class="form-control" id="notification-target">
+                                    <option value="all">All Users</option>
+                                    <option value="specific">Specific User</option>
+                                    <option value="with_orders">Users with Orders</option>
+                                    <option value="with_balance">Users with Balance</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="specific-user-group" style="display: none;">
+                                <label>Select User</label>
+                                <select class="form-control" id="notification-user">
+                                    <!-- Users will be loaded here -->
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Notification Title</label>
+                                <input type="text" class="form-control" id="notification-title" placeholder="Enter notification title">
+                            </div>
+                            <div class="form-group">
+                                <label>Notification Message</label>
+                                <textarea class="form-control" id="notification-message" rows="4" placeholder="Enter your message"></textarea>
+                                <small class="text-muted">You can include links using HTML: &lt;a href="https://example.com"&gt;Link Text&lt;/a&gt;</small>
+                            </div>
+                            
+                            <!-- Schedule Notification Options -->
+                            <div class="form-group">
+                                <label>Schedule Date & Time</label>
+                                <input type="datetime-local" class="form-control" id="notification-schedule">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Repeat Notification</label>
+                                <select class="form-control" id="notification-repeat">
+                                    <option value="none">Do not repeat</option>
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                    <option value="custom">Custom Days</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="custom-repeat-container" style="display: none;">
+                                <label>Select Days (for custom repeat)</label>
+                                <div class="day-selector">
+                                    <label><input type="checkbox" name="repeat-days" value="0"> Sun</label>
+                                    <label><input type="checkbox" name="repeat-days" value="1"> Mon</label>
+                                    <label><input type="checkbox" name="repeat-days" value="2"> Tue</label>
+                                    <label><input type="checkbox" name="repeat-days" value="3"> Wed</label>
+                                    <label><input type="checkbox" name="repeat-days" value="4"> Thu</label>
+                                    <label><input type="checkbox" name="repeat-days" value="5"> Fri</label>
+                                    <label><input type="checkbox" name="repeat-days" value="6"> Sat</label>
+                                </div>
+                            </div>
+
+                            <button class="btn" id="send-notification">
+                                <i class="fas fa-paper-plane"></i> Send Notification
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Push Notifications Tab -->
+                    <div class="tab-content" id="push-tab">
+                        <div class="form-card">
+                            <h3 class="card-title mb-4">Send Push Notification</h3>
+                            <div class="form-group">
+                                <label>Notification Title</label>
+                                <input type="text" class="form-control" id="push-notification-title" placeholder="Enter notification title">
+                            </div>
+                            <div class="form-group">
+                                <label>Notification Message</label>
+                                <textarea class="form-control" id="push-notification-message" rows="4" placeholder="Enter your message"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Value Link (URL)</label>
+                                <input type="url" class="form-control" id="push-notification-link" placeholder="https://example.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Image Link (URL)</label>
+                                <input type="url" class="form-control" id="push-notification-image" placeholder="https://example.com/image.jpg">
+                            </div>
+                            <button class="btn" id="send-push-notification">
+                                <i class="fas fa-paper-plane"></i> Send Push Notification
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scheduled Notifications List -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Scheduled Notifications</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="schedule-list" id="scheduled-notifications-list">
+                                <div class="loading">
+                                    <div class="loading-spinner"></div>
+                                    <div class="loading-text">Loading scheduled notifications...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Notification History</h3>
+                            <div class="form-group" style="margin: 0; width: 300px;">
+                                <input type="text" id="notification-search" class="form-control" placeholder="Search notifications...">
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Message</th>
+                                        <th>Target</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="notifications-history">
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="loading">
+                                                <div class="loading-spinner"></div>
+                                                <div class="loading-text">Loading notification history...</div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Page -->
+                <div class="page-content" id="settings-page" style="display: none;">
+                    <div class="page-header">
+                        <h2 class="page-title">System Settings</h2>
+                        <p class="page-subtitle">Configure your application settings</p>
+                    </div>
+
+                    <div class="form-card">
+                        <h3 class="card-title mb-4">General Settings</h3>
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Site Title</label>
+                                    <input type="text" class="form-control" id="site-title" value="Social Service">
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Admin Email</label>
+                                    <input type="email" class="form-control" id="admin-email" value="admin@example.com">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Currency</label>
+                                    <select class="form-control" id="currency">
+                                        <option value="BDT">Bangladeshi Taka (৳)</option>
+                                        <option value="USD">US Dollar ($)</option>
+                                        <option value="EUR">Euro (€)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Timezone</label>
+                                    <select class="form-control" id="timezone">
+                                        <option value="Asia/Dhaka">Asia/Dhaka</option>
+                                        <option value="UTC">UTC</option>
+                                        <option value="America/New_York">America/New York</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label>Header Logo URL</label>
+                                    <input type="text" class="form-control" id="header-logo-url">
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn" id="save-settings">
+                            <i class="fas fa-save"></i> Save Settings
+                        </button>
+                    </div>
+
+                    <div class="form-card">
+                        <h3 class="card-title mb-4">Notification Settings</h3>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="notify-new-orders" checked>
+                                <label class="form-check-label" for="notify-new-orders">Notify on new orders</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="notify-pending-payments" checked>
+                                <label class="form-check-label" for="notify-pending-payments">Notify on pending payments</label>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="notify-low-balance" checked>
+                                <label class="form-check-label" for="notify-low-balance">Notify on low user balance</label>
+                            </div>
+                        </div>
+                        <button class="btn" id="save-notification-settings">
+                            <i class="fas fa-save"></i> Save Notification Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle" id="toast-icon"></i>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- View All Orders Modal -->
+    <div class="modal" id="all-orders-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">All Orders</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>User</th>
+                                <th>Service</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-orders-list">
+                            <tr>
+                                <td colspan="7">
+                                    <div class="loading">
+                                        <div class="loading-spinner"></div>
+                                        <div class="loading-text">Loading orders...</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Order Modal -->
+    <div class="modal" id="view-order-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Order Details</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" id="order-details">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Loading order details...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm modal-close">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div class="modal" id="edit-user-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit User</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form">
+                    <input type="hidden" id="edit-user-id">
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Name</label>
+                                <input type="text" class="form-control" id="edit-user-name" required>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" class="form-control" id="edit-user-email" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Phone</label>
+                                <input type="tel" class="form-control" id="edit-user-phone">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Balance</label>
+                                <input type="number" class="form-control" id="edit-user-balance" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select class="form-control" id="edit-user-status" required>
+                                    <option value="active">Active</option>
+                                    <option value="disabled">Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>Verification</label>
+                                <select class="form-control" id="edit-user-verified" required>
+                                    <option value="false">Not Verified</option>
+                                    <option value="true">Verified</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm modal-close">Cancel</button>
+                <button class="btn btn-sm btn-success" id="save-user-btn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Service Modal -->
+    <div class="modal" id="edit-service-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit Service</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-service-form">
+                    <input type="hidden" id="edit-service-id">
+                    <input type="hidden" id="edit-service-collection">
+                    <div class="form-group">
+                        <label>Service Name</label>
+                        <input type="text" class="form-control" id="edit-service-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Price</label>
+                        <input type="number" class="form-control" id="edit-service-price" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+                        <input type="text" class="form-control" id="edit-service-category">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" id="edit-service-status" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm modal-close">Cancel</button>
+                <button class="btn btn-sm btn-success" id="save-service-btn">
+                    <i class="fas fa-save"></i> Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Service Modal -->
+    <div class="modal" id="add-service-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Add New Service</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-service-form">
+                    <div class="form-group">
+                        <label>Collection</label>
+                        <select class="form-control" id="add-service-collection" required>
+                            <option value="freeService">Free Service</option>
+                            <option value="services">Paid Service</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Service Name</label>
+                        <input type="text" class="form-control" id="add-service-name" required>
+                    </div>
+                    <div class="form-group" id="price-field">
+                        <label>Price</label>
+                        <input type="number" class="form-control" id="add-service-price" step="0.01" value="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Color</label>
+                        <input type="color" class="form-control" id="add-service-color" value="#4361ee">
+                    </div>
+                    <div class="form-group">
+                        <label>Icon (Font Awesome class)</label>
+                        <input type="text" class="form-control" id="add-service-icon" placeholder="fas fa-cog">
+                    </div>
+                    <div class="form-group">
+                        <label>Link</label>
+                        <input type="text" class="form-control" id="add-service-link" placeholder="Service URL">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="form-control" id="add-service-status" required>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-sm modal-close">Cancel</button>
+                <button class="btn btn-sm btn-success" id="confirm-add-service-btn">
+                    <i class="fas fa-plus"></i> Add Service
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyCEn86IfdTNcvEmQuNP-KCvrmMABagcdkc",
+    authDomain: "web-iatz.firebaseapp.com",
+    projectId: "web-iatz",
+    storageBucket: "web-iatz.appspot.com",
+    messagingSenderId: "264921056318",
+    appId: "1:264921056318:web:c77e93fad660665bdfbd6f",
+    databaseURL: "https://web-iatz-default-rtdb.asia-southeast1.firebasedatabase.app/"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const realtimeDb = firebase.database();
+
+// DOM Elements
+const loginPage = document.getElementById('login-page');
+const adminDashboard = document.getElementById('admin-dashboard');
+const loginForm = document.getElementById('login-form');
+const logoutBtn = document.getElementById('logout-btn');
+const toggleSidebar = document.getElementById('toggle-sidebar');
+const closeSidebar = document.getElementById('close-sidebar');
+const sidebar = document.getElementById('sidebar');
+const toast = document.getElementById('toast');
+const toastMessage = document.getElementById('toast-message');
+const toastIcon = document.getElementById('toast-icon');
+const menuItems = document.querySelectorAll('.menu-item');
+const pageContents = document.querySelectorAll('.page-content');
+const currentPageTitle = document.getElementById('current-page-title');
+const viewAllOrdersBtn = document.getElementById('view-all-orders');
+const allOrdersModal = document.getElementById('all-orders-modal');
+const viewOrderModal = document.getElementById('view-order-modal');
+const editUserModal = document.getElementById('edit-user-modal');
+const saveUserBtn = document.getElementById('save-user-btn');
+const editUserForm = document.getElementById('edit-user-form');
+const editServiceModal = document.getElementById('edit-service-modal');
+const saveServiceBtn = document.getElementById('save-service-btn');
+const editServiceForm = document.getElementById('edit-service-form');
+const saveSettingsBtn = document.getElementById('save-settings');
+const addServiceBtn = document.getElementById('add-service-btn');
+const addServiceModal = document.getElementById('add-service-modal');
+const confirmAddServiceBtn = document.getElementById('confirm-add-service-btn');
+const notificationBell = document.getElementById('notification-bell');
+const notificationPanel = document.getElementById('notification-panel');
+const notificationCount = document.getElementById('notification-count');
+const notificationList = document.getElementById('notification-list');
+const clearNotificationsBtn = document.getElementById('clear-notifications');
+const sendNotificationBtn = document.getElementById('send-notification');
+const sendPushNotificationBtn = document.getElementById('send-push-notification');
+const notificationTarget = document.getElementById('notification-target');
+const specificUserGroup = document.getElementById('specific-user-group');
+const notificationUser = document.getElementById('notification-user');
+const themeToggle = document.getElementById('theme-toggle');
+const themeIcon = document.getElementById('theme-icon');
+const refreshDataBtn = document.getElementById('refresh-data');
+const threeDotMenu = document.getElementById('three-dot-menu');
+const threeDotBtn = document.querySelector('.three-dot-btn');
+const threeDotContent = document.querySelector('.three-dot-content');
+const priceField = document.getElementById('price-field');
+const addServiceCollection = document.getElementById('add-service-collection');
+const notificationRepeat = document.getElementById('notification-repeat');
+const customRepeatContainer = document.getElementById('custom-repeat-container');
+const notificationSchedule = document.getElementById('notification-schedule');
+const scheduledNotificationsList = document.getElementById('scheduled-notifications-list');
+const tabs = document.querySelectorAll('.tab');
+const tabContents = document.querySelectorAll('.tab-content');
+
+// Dashboard refresh interval
+let dashboardRefreshInterval;
+let scheduledNotificationsInterval;
+
+// Track processed notifications to prevent duplicates
+let processedNotificationIds = new Set();
+
+// Initialize Admin Panel
+function initAdminPanel() {
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            // Allow access to any authenticated user
+            loginPage.style.display = 'none';
+            adminDashboard.style.display = 'flex';
+            
+            document.getElementById('admin-greeting').textContent = user.email;
+            
+            // Initialize real-time listeners
+            initRealTimeListeners();
+            loadDashboardData();
+            loadSettings();
+            
+            // Start dashboard auto-refresh
+            startDashboardAutoRefresh();
+            
+            // Start scheduled notifications checker
+            startScheduledNotificationsChecker();
+        } else {
+            // User is not authenticated
+            showLoginPage();
+            
+            // Stop dashboard auto-refresh
+            stopDashboardAutoRefresh();
+            
+            // Stop scheduled notifications checker
+            stopScheduledNotificationsChecker();
+        }
+    });
+
+    // Event Listeners
+    loginForm.addEventListener('submit', handleLogin);
+    logoutBtn.addEventListener('click', handleLogout);
+    toggleSidebar.addEventListener('click', () => sidebar.classList.toggle('active'));
+    closeSidebar.addEventListener('click', () => sidebar.classList.remove('active'));
+    viewAllOrdersBtn.addEventListener('click', () => {
+        loadAllOrders();
+        allOrdersModal.style.display = 'flex';
+    });
+    saveUserBtn.addEventListener('click', saveUserChanges);
+    saveServiceBtn.addEventListener('click', saveServiceChanges);
+    saveSettingsBtn.addEventListener('click', saveSettings);
+    addServiceBtn.addEventListener('click', () => addServiceModal.style.display = 'flex');
+    confirmAddServiceBtn.addEventListener('click', addNewService);
+    notificationBell.addEventListener('click', toggleNotificationPanel);
+    clearNotificationsBtn.addEventListener('click', clearAllNotifications);
+    sendNotificationBtn.addEventListener('click', sendNotificationToUsers);
+    sendPushNotificationBtn.addEventListener('click', sendPushNotification);
+    notificationTarget.addEventListener('change', toggleSpecificUserField);
+    themeToggle.addEventListener('click', toggleTheme);
+    refreshDataBtn.addEventListener('click', refreshAllData);
+    addServiceCollection.addEventListener('change', togglePriceField);
+    notificationRepeat.addEventListener('change', toggleCustomRepeat);
+    threeDotBtn.addEventListener('click', toggleThreeDotMenu);
+
+    // Tab switching
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const tabId = tab.getAttribute('data-tab');
+            
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            document.getElementById(`${tabId}-tab`).classList.add('active');
+        });
+    });
+
+    // Three dot menu items
+    document.querySelectorAll('.three-dot-content a').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = item.getAttribute('data-page');
+            if (page) {
+                showPage(page);
+                // Update active menu item
+                menuItems.forEach(i => i.classList.remove('active'));
+                document.querySelector(`.menu-item[data-page="${page}"]`).classList.add('active');
+                currentPageTitle.textContent = item.textContent;
+            }
+            threeDotMenu.classList.remove('active');
+        });
+    });
+
+    // Menu item clicks
+    menuItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = item.getAttribute('data-page');
+            showPage(page);
+            menuItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            currentPageTitle.textContent = item.querySelector('span').textContent;
+            sidebar.classList.remove('active');
+            
+            // Start/stop dashboard auto-refresh based on current page
+            if (page === 'dashboard') {
+                startDashboardAutoRefresh();
+            } else {
+                stopDashboardAutoRefresh();
+            }
+        });
+    });
+
+    // Modal close buttons
+    document.querySelectorAll('.modal-close').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.style.display = 'none';
+            });
+            notificationPanel.classList.remove('open');
+        });
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+        // Close three dot menu when clicking outside
+        if (!threeDotMenu.contains(e.target)) {
+            threeDotMenu.classList.remove('active');
+        }
+    });
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        themeIcon.className = 'fas fa-sun';
+    } else if (savedTheme === 'light') {
+        document.body.classList.remove('dark-mode');
+        themeIcon.className = 'fas fa-moon';
+    } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark-mode');
+        themeIcon.className = 'fas fa-sun';
+    }
+}
+
+// Start scheduled notifications checker
+function startScheduledNotificationsChecker() {
+    // Clear any existing interval
+    stopScheduledNotificationsChecker();
+    
+    // Set new interval to check scheduled notifications every 30 seconds
+    scheduledNotificationsInterval = setInterval(() => {
+        checkScheduledNotifications();
+    }, 30000); // 30 seconds
+    
+    // Check immediately on load
+    checkScheduledNotifications();
+    
+    console.log("Scheduled notifications checker started");
+}
+
+// Stop scheduled notifications checker
+function stopScheduledNotificationsChecker() {
+    if (scheduledNotificationsInterval) {
+        clearInterval(scheduledNotificationsInterval);
+        scheduledNotificationsInterval = null;
+    }
+}
+
+// Start dashboard auto-refresh
+function startDashboardAutoRefresh() {
+    // Clear any existing interval
+    stopDashboardAutoRefresh();
+    
+    // Set new interval to refresh dashboard every 10 seconds
+    dashboardRefreshInterval = setInterval(() => {
+        if (document.getElementById('dashboard-page').style.display === 'block') {
+            loadDashboardData();
+        }
+    }, 10000); // 10 seconds
+}
+
+// Stop dashboard auto-refresh
+function stopDashboardAutoRefresh() {
+    if (dashboardRefreshInterval) {
+        clearInterval(dashboardRefreshInterval);
+        dashboardRefreshInterval = null;
+    }
+}
+
+// Toggle three dot menu
+function toggleThreeDotMenu() {
+    threeDotMenu.classList.toggle('active');
+}
+
+// Toggle price field based on collection selection
+function togglePriceField() {
+    if (addServiceCollection.value === 'freeService') {
+        priceField.style.display = 'none';
+    } else {
+        priceField.style.display = 'block';
+    }
+}
+
+// Toggle custom repeat options
+function toggleCustomRepeat() {
+    if (notificationRepeat.value === 'custom') {
+        customRepeatContainer.style.display = 'block';
+    } else {
+        customRepeatContainer.style.display = 'none';
+    }
+}
+
+// Toggle specific user field based on notification target
+function toggleSpecificUserField() {
+    if (notificationTarget.value === 'specific') {
+        specificUserGroup.style.display = 'block';
+        // Load users for dropdown
+        loadUsersForDropdown();
+    } else {
+        specificUserGroup.style.display = 'none';
+    }
+}
+
+// Show login page
+function showLoginPage() {
+    loginPage.style.display = 'flex';
+    adminDashboard.style.display = 'none';
+}
+
+// Handle login
+function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    
+    showLoading('Logging in...');
+    
+    auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            hideLoading();
+            showToast('Login successful!');
+        })
+        .catch((error) => {
+            hideLoading();
+            console.error('Login error:', error);
+            showToast('Login failed: ' + error.message, false);
+        });
+}
+
+// Handle logout
+function handleLogout() {
+    auth.signOut()
+        .then(() => {
+            showLoginPage();
+            showToast('Logged out successfully');
+        })
+        .catch(error => {
+            console.error('Logout error:', error);
+            showToast('Logout failed', false);
+        });
+}
+
+// Toggle theme
+function toggleTheme() {
+    if (document.body.classList.contains('dark-mode')) {
+        document.body.classList.remove('dark-mode');
+        localStorage.setItem('theme', 'light');
+        themeIcon.className = 'fas fa-moon';
+    } else {
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+        themeIcon.className = 'fas fa-sun';
+    }
+}
+
+// Refresh all data
+function refreshAllData() {
+    const currentPage = document.querySelector('.page-content:not([style*="display: none"])').id.replace('-page', '');
+    showLoading('Refreshing data...');
+    
+    switch(currentPage) {
+        case 'dashboard': 
+            loadDashboardData();
+            break;
+        case 'users': 
+            loadUsers();
+            break;
+        case 'orders': 
+            loadOrders();
+            break;
+        case 'services': 
+            loadServices();
+            break;
+        case 'payments': 
+            loadPayments();
+            break;
+        case 'notifications': 
+            loadNotifications();
+            loadScheduledNotifications();
+            break;
+        case 'settings': 
+            loadSettings();
+            break;
+    }
+}
+
+// Show loading state
+function showLoading(message = 'Loading...') {
+    toastMessage.textContent = message;
+    toastIcon.className = 'fas fa-spinner fa-spin';
+    toast.className = 'toast show info';
+}
+
+// Hide loading state
+function hideLoading() {
+    toast.classList.remove('show');
+}
+
+// Initialize real-time listeners
+function initRealTimeListeners() {
+    // Listen for new orders
+    db.collection('orders')
+        .where('status', '==', 'pending')
+        .onSnapshot(snapshot => {
+            const count = snapshot.size;
+            document.getElementById('orders-badge').textContent = count;
+            document.getElementById('pending-orders').textContent = count;
+            
+            if (count > 0) {
+                showToast(`You have ${count} pending orders`, true, 'info');
+            }
+        }, error => {
+            console.error('Error listening to orders:', error);
+        });
+        
+    // Listen for pending payments
+    db.collection('payments')
+        .where('status', '==', 'pending')
+        .onSnapshot(snapshot => {
+            const count = snapshot.size;
+            document.getElementById('payments-badge').textContent = count;
+            document.getElementById('payment-pending').textContent = count;
+            
+            if (count > 0) {
+                showToast(`You have ${count} pending payments`, true, 'info');
+            }
+        }, error => {
+            console.error('Error listening to payments:', error);
+        });
+        
+    // Listen for new users
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    
+    db.collection('users')
+        .where('createdAt', '>=', weekAgo)
+        .onSnapshot(snapshot => {
+            document.getElementById('users-badge').textContent = snapshot.size;
+        }, error => {
+            console.error('Error listening to users:', error);
+        });
+        
+    // Listen for admin notifications
+    auth.currentUser && db.collection('notifications')
+        .where('adminId', '==', auth.currentUser.uid)
+        .where('read', '==', false)
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+            const count = snapshot.size;
+            notificationCount.textContent = count;
+            
+            // Update notification list
+            notificationList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                notificationList.innerHTML = '<div class="notification-item"><div class="notification-content">No notifications</div></div>';
+            } else {
+                snapshot.forEach(doc => {
+                    const notification = doc.data();
+                    notificationList.innerHTML += `
+                        <div class="notification-item unread" data-id="${doc.id}">
+                            <div class="notification-content">${notification.message}</div>
+                            <div class="notification-time">${formatFirebaseDate(notification.createdAt)}</div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // Add click event to mark as read
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const notificationId = item.getAttribute('data-id');
+                    if (notificationId) {
+                        markNotificationAsRead(notificationId);
+                        item.classList.remove('unread');
+                    }
+                });
+            });
+        }, error => {
+            console.error('Error listening to notifications:', error);
+            notificationList.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading notifications</h3><p>Please try again later</p></div>';
+        });
+}
+
+// Toggle notification panel
+function toggleNotificationPanel() {
+    notificationPanel.classList.toggle('open');
+}
+
+// Mark notification as read
+function markNotificationAsRead(notificationId) {
+    db.collection('notifications').doc(notificationId).update({
+        read: true,
+        readAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        // Update notification count
+        const currentCount = parseInt(notificationCount.textContent);
+        if (currentCount > 0) {
+            notificationCount.textContent = currentCount - 1;
+        }
+    }).catch(error => {
+        console.error('Error marking notification as read:', error);
+        showToast('Error marking notification as read', false);
+    });
+}
+
+// Clear all notifications
+function clearAllNotifications() {
+    const userId = auth.currentUser.uid;
+    db.collection('notifications')
+        .where('adminId', '==', userId)
+        .get()
+        .then(snapshot => {
+            const batch = db.batch();
+            snapshot.forEach(doc => {
+                batch.update(doc.ref, { 
+                    read: true,
+                    readAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            });
+            return batch.commit();
+        })
+        .then(() => {
+            showToast('All notifications cleared');
+            notificationCount.textContent = '0';
+        })
+        .catch(error => {
+            console.error('Error clearing notifications:', error);
+            showToast('Error clearing notifications', false);
+        });
+}
+
+// Load users for notification dropdown
+function loadUsersForDropdown() {
+    showLoading('Loading users...');
+    db.collection('users').get()
+        .then(snapshot => {
+            hideLoading();
+            notificationUser.innerHTML = '';
+            if (snapshot.empty) {
+                notificationUser.innerHTML = '<option value="">No users found</option>';
+            } else {
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    notificationUser.innerHTML += `
+                        <option value="${doc.id}">${user.name || user.email} (${doc.id})</option>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading users for dropdown:', error);
+            notificationUser.innerHTML = '<option value="">Error loading users</option>';
+            showToast('Error loading users', false);
+        });
+}
+
+// Send notification to users
+function sendNotificationToUsers() {
+    const title = document.getElementById('notification-title').value;
+    const message = document.getElementById('notification-message').value;
+    const target = notificationTarget.value;
+    const specificUserId = notificationUser.value;
+    const scheduleTime = document.getElementById('notification-schedule').value;
+    const repeat = document.getElementById('notification-repeat').value;
+    
+    // Custom days selection
+    let repeatDays = [];
+    if (repeat === 'custom') {
+        document.querySelectorAll('input[name="repeat-days"]:checked').forEach(checkbox => {
+            repeatDays.push(parseInt(checkbox.value));
+        });
+        
+        if (repeatDays.length === 0) {
+            showToast('Please select at least one day for custom repeat', false);
+            return;
+        }
+    }
+
+    if (!title || !message) {
+        showToast('Title and message are required', false);
+        return;
+    }
+
+    // Schedule logic here
+    if (scheduleTime) {
+        // Custom repeat এর জন্য
+        if (repeat === 'custom') {
+            // Custom days এর জন্য পরবর্তী সময় calculate করুন
+            const timeParts = scheduleTime.split(':');
+            const hours = parseInt(timeParts[0]);
+            const minutes = parseInt(timeParts[1]);
+            const nextScheduledTime = getNextScheduledTime(hours, minutes, repeatDays);
+            
+            if (nextScheduledTime) {
+                scheduleNotification(title, message, target, specificUserId, nextScheduledTime, repeat, repeatDays, scheduleTime);
+            } else {
+                showToast('Error calculating scheduled time', false);
+            }
+        } else {
+            // অন্যান্য repeat options এর জন্য
+            const scheduleDateTime = new Date(scheduleTime);
+            if (isNaN(scheduleDateTime.getTime())) {
+                showToast('Invalid date/time format', false);
+                return;
+            }
+            scheduleNotification(title, message, target, specificUserId, scheduleDateTime, repeat, repeatDays, scheduleTime);
+        }
+    } else {
+        // Send immediately
+        sendNotificationImmediately(title, message, target, specificUserId);
+    }
+}
+
+// Send push notification
+function sendPushNotification() {
+    const title = document.getElementById('push-notification-title').value;
+    const message = document.getElementById('push-notification-message').value;
+    const link = document.getElementById('push-notification-link').value;
+    const image = document.getElementById('push-notification-image').value;
+
+    if (!title || !message) {
+        showToast('Title and message are required', false);
+        return;
+    }
+
+    showLoading('Sending push notification...');
+
+    // Create notification data for Realtime Database
+    const notificationData = {
+        title: title,
+        message: message,
+        link: link || '',
+        image: image || '',
+        timestamp: Date.now()
+    };
+
+    // Save to Realtime Database
+    realtimeDb.ref('notifications').push(notificationData)
+        .then(() => {
+            hideLoading();
+            showToast('Push notification sent successfully');
+            
+            // Clear form
+            document.getElementById('push-notification-title').value = '';
+            document.getElementById('push-notification-message').value = '';
+            document.getElementById('push-notification-link').value = '';
+            document.getElementById('push-notification-image').value = '';
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error sending push notification:', error);
+            showToast('Error sending push notification', false);
+        });
+}
+
+// Get next scheduled time for custom days
+function getNextScheduledTime(hours, minutes, selectedDays) {
+    const now = new Date();
+    const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const scheduledTime = hours * 60 + minutes;
+    
+    // আজকের দিনই selected days এর মধ্যে আছে কিনা এবং সময় এখনও হয়নি কিনা
+    if (selectedDays.includes(currentDay) && scheduledTime > currentTime) {
+        const nextDate = new Date(now);
+        nextDate.setHours(hours, minutes, 0, 0);
+        return nextDate;
+    }
+    
+    // পরবর্তী selected দিন খুঁজে বের করুন
+    for (let i = 1; i <= 7; i++) {
+        const nextDay = (currentDay + i) % 7;
+        if (selectedDays.includes(nextDay)) {
+            const nextDate = new Date(now);
+            nextDate.setDate(now.getDate() + i);
+            nextDate.setHours(hours, minutes, 0, 0);
+            return nextDate;
+        }
+    }
+    
+    return null;
+}
+
+// Send notification immediately
+function sendNotificationImmediately(title, message, target, specificUserId) {
+    showLoading('Sending notification...');
+
+    let promise;
+
+    if (target === 'all') {
+        // Send to all users
+        promise = db.collection('users').get()
+            .then(snapshot => {
+                const batch = db.batch();
+                snapshot.forEach(doc => {
+                    const notificationRef = db.collection('notifications').doc();
+                    batch.set(notificationRef, {
+                        userId: doc.id,
+                        title: title,
+                        message: message,
+                        type: 'admin',
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                return batch.commit();
+            });
+    } else if (target === 'specific' && specificUserId) {
+        // Send to specific user
+        promise = db.collection('notifications').add({
+            userId: specificUserId,
+            title: title,
+            message: message,
+            type: 'admin',
+            read: false,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } else if (target === 'with_orders') {
+        // Send to users with orders
+        promise = db.collection('orders').get()
+            .then(snapshot => {
+                const userIds = [...new Set(snapshot.docs.map(doc => doc.data().userId))];
+                const batch = db.batch();
+                userIds.forEach(userId => {
+                    const notificationRef = db.collection('notifications').doc();
+                    batch.set(notificationRef, {
+                        userId: userId,
+                        title: title,
+                        message: message,
+                        type: 'admin',
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                return batch.commit();
+            });
+    } else if (target === 'with_balance') {
+        // Send to users with balance > 0
+        promise = db.collection('users')
+            .where('balance', '>', 0)
+            .get()
+            .then(snapshot => {
+                const batch = db.batch();
+                snapshot.forEach(doc => {
+                    const notificationRef = db.collection('notifications').doc();
+                    batch.set(notificationRef, {
+                        userId: doc.id,
+                        title: title,
+                        message: message,
+                        type: 'admin',
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                });
+                return batch.commit();
+            });
+    } else {
+        showToast('Invalid target selection', false);
+        return;
+    }
+
+    promise.then(() => {
+        hideLoading();
+        showToast('Notification sent successfully');
+        // Clear form
+        document.getElementById('notification-title').value = '';
+        document.getElementById('notification-message').value = '';
+        document.getElementById('notification-schedule').value = '';
+    }).catch(error => {
+        hideLoading();
+        console.error('Error sending notification:', error);
+        showToast('Error sending notification', false);
+    });
+}
+
+// Schedule notification
+function scheduleNotification(title, message, target, specificUserId, scheduleDate, repeat, repeatDays, scheduleTimeStr) {
+    const notificationData = {
+        title,
+        message,
+        target,
+        specificUserId,
+        scheduledTime: firebase.firestore.Timestamp.fromDate(scheduleDate),
+        repeat,
+        repeatDays,
+        scheduleTime: scheduleTimeStr,
+        status: 'scheduled',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    showLoading('Scheduling notification...');
+    
+    db.collection('scheduledNotifications').add(notificationData)
+        .then(() => {
+            hideLoading();
+            showToast('Notification scheduled successfully');
+            // Clear form
+            document.getElementById('notification-title').value = '';
+            document.getElementById('notification-message').value = '';
+            document.getElementById('notification-schedule').value = '';
+            
+            // Reload scheduled notifications list
+            loadScheduledNotifications();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error scheduling notification:', error);
+            showToast('Error scheduling notification', false);
+        });
+}
+
+// Load scheduled notifications
+function loadScheduledNotifications() {
+    db.collection('scheduledNotifications')
+        .orderBy('scheduledTime', 'asc')
+        .get()
+        .then(snapshot => {
+            scheduledNotificationsList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                scheduledNotificationsList.innerHTML = '<div class="text-center">No scheduled notifications</div>';
+            } else {
+                snapshot.forEach(doc => {
+                    const notification = doc.data();
+                    const scheduledDate = notification.scheduledTime.toDate();
+                    
+                    let displayText = '';
+                    if (notification.repeat === 'custom' && notification.repeatDays && notification.repeatDays.length > 0) {
+                        // Custom days এর জন্য বিশেষ ফরম্যাট
+                        const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                        const selectedDays = notification.repeatDays.map(day => daysOfWeek[day]).join(', ');
+                        displayText = `${selectedDays} at ${notification.scheduleTime}`;
+                    } else {
+                        // Regular scheduling
+                        displayText = formatFirebaseDate(notification.scheduledTime);
+                    }
+                    
+                    scheduledNotificationsList.innerHTML += `
+                        <div class="schedule-item">
+                            <div class="schedule-item-header">
+                                <div class="schedule-item-title">${notification.title}</div>
+                                <div class="schedule-item-date">${displayText}</div>
+                            </div>
+                            <div class="schedule-item-message">${notification.message}</div>
+                            <div class="schedule-item-details">
+                                <small>Target: ${notification.target} | Repeat: ${notification.repeat}</small>
+                            </div>
+                            <div class="schedule-item-actions">
+                                <button class="btn btn-sm btn-danger" onclick="deleteScheduledNotification('${doc.id}')">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading scheduled notifications:', error);
+            scheduledNotificationsList.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading scheduled notifications</h3></div>';
+        });
+}
+
+// Check and process scheduled notifications - FIXED VERSION
+function checkScheduledNotifications() {
+    const now = new Date();
+    // Convert to Firestore timestamp for comparison
+    const currentTimestamp = firebase.firestore.Timestamp.fromDate(now);
+    
+    console.log("Checking scheduled notifications at:", now.toLocaleString('bn-BD'));
+    
+    // Scheduled notifications খুঁজে বের করুন যেগুলো এখন send করা উচিত
+    db.collection('scheduledNotifications')
+        .where('status', '==', 'scheduled')
+        .get()
+        .then(snapshot => {
+            console.log(`Found ${snapshot.size} scheduled notifications total`);
+            
+            if (snapshot.size === 0) return;
+            
+            const notificationsToProcess = [];
+            
+            snapshot.forEach(doc => {
+                const notification = doc.data();
+                const scheduledTime = notification.scheduledTime;
+                
+                // Convert both to milliseconds for accurate comparison
+                const scheduledMillis = scheduledTime.toDate().getTime();
+                const currentMillis = now.getTime();
+                
+                console.log(`Notification: ${notification.title}, Scheduled: ${scheduledTime.toDate().toLocaleString('bn-BD')}`);
+                
+                // Check if the scheduled time has passed (with 2 minute buffer)
+                if (scheduledMillis <= currentMillis + 120000) {
+                    // Check if this notification has already been processed
+                    if (!processedNotificationIds.has(doc.id)) {
+                        notificationsToProcess.push({id: doc.id, data: notification});
+                        processedNotificationIds.add(doc.id);
+                        console.log("Will process this notification");
+                    } else {
+                        console.log("Notification already processed, skipping");
+                    }
+                }
+            });
+            
+            console.log(`Processing ${notificationsToProcess.length} notifications`);
+            
+            // Process all eligible notifications
+            notificationsToProcess.forEach(item => {
+                // Send the notification immediately
+                sendScheduledNotification(item.id, item.data);
+                
+                // Handle repeat logic
+                handleNotificationRepeat(item.id, item.data);
+            });
+        })
+        .catch(error => {
+            console.error('Error checking scheduled notifications:', error);
+            showToast('Error checking scheduled notifications', false);
+        });
+}
+
+// Handle notification repeat logic - IMPROVED
+function handleNotificationRepeat(notificationId, notification) {
+    // If no repeat or repeat is 'none', delete the notification after sending
+    if (!notification.repeat || notification.repeat === 'none') {
+        db.collection('scheduledNotifications').doc(notificationId).delete()
+            .then(() => {
+                console.log("One-time notification deleted after sending");
+                // Remove from processed list
+                processedNotificationIds.delete(notificationId);
+            })
+            .catch(error => {
+                console.error("Error deleting notification:", error);
+            });
+        return;
+    }
+    
+    let nextScheduledTime = null;
+    
+    if (notification.repeat === 'custom' && notification.repeatDays && notification.repeatDays.length > 0) {
+        // Custom repeat এর জন্য পরবর্তী সময় calculate করুন
+        const timeParts = notification.scheduleTime.split(':');
+        const hours = parseInt(timeParts[0]);
+        const minutes = parseInt(timeParts[1]);
+        nextScheduledTime = getNextScheduledTime(hours, minutes, notification.repeatDays);
+    } else {
+        // Other repeat types (daily, weekly, monthly) এর জন্য
+        const lastScheduledTime = notification.scheduledTime.toDate();
+        nextScheduledTime = calculateNextScheduledTime(lastScheduledTime, notification.repeat);
+    }
+    
+    if (nextScheduledTime) {
+        // পরবর্তী সময় update করুন
+        db.collection('scheduledNotifications').doc(notificationId).update({
+            scheduledTime: firebase.firestore.Timestamp.fromDate(nextScheduledTime),
+            lastSent: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            console.log("Next scheduled time updated to:", nextScheduledTime.toLocaleString('bn-BD'));
+            // Remove from processed list so it can be processed again next time
+            processedNotificationIds.delete(notificationId);
+        }).catch(error => {
+            console.error("Error updating next scheduled time:", error);
+        });
+    } else {
+        // No next time found, delete the notification
+        db.collection('scheduledNotifications').doc(notificationId).delete()
+            .then(() => {
+                console.log("Notification deleted after no next time found");
+                // Remove from processed list
+                processedNotificationIds.delete(notificationId);
+            }).catch(error => {
+                console.error("Error deleting notification:", error);
+            });
+    }
+}
+
+// Send scheduled notification - IMPROVED with error handling
+function sendScheduledNotification(notificationId, notificationData) {
+    console.log("Sending scheduled notification:", notificationData.title);
+    
+    // Send the notification using the existing logic
+    sendNotificationImmediately(
+        notificationData.title,
+        notificationData.message,
+        notificationData.target,
+        notificationData.specificUserId
+    ).then(() => {
+        console.log("Scheduled notification sent successfully:", notificationData.title);
+        
+        // If it's a one-time notification, mark it as sent
+        if (!notificationData.repeat || notificationData.repeat === 'none') {
+            db.collection('scheduledNotifications').doc(notificationId).update({
+                status: 'sent',
+                sentAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    }).catch(error => {
+        console.error("Error sending scheduled notification:", error);
+        // Remove from processed list so it can be retried
+        processedNotificationIds.delete(notificationId);
+        // Retry after 2 minutes if failed
+        setTimeout(() => {
+            console.log("Retrying failed notification:", notificationData.title);
+            sendScheduledNotification(notificationId, notificationData);
+        }, 120000); // 2 minutes
+    });
+}
+
+// Calculate next scheduled time for repeat types
+function calculateNextScheduledTime(lastScheduledTime, repeatType) {
+    const nextTime = new Date(lastScheduledTime);
+    
+    switch (repeatType) {
+        case 'daily':
+            nextTime.setDate(nextTime.getDate() + 1);
+            break;
+        case 'weekly':
+            nextTime.setDate(nextTime.getDate() + 7);
+            break;
+        case 'monthly':
+            nextTime.setMonth(nextTime.getMonth() + 1);
+            break;
+        default:
+            return null;
+    }
+    
+    return nextTime;
+}
+
+// Delete scheduled notification
+function deleteScheduledNotification(id) {
+    if (confirm('Are you sure you want to delete this scheduled notification?')) {
+        db.collection('scheduledNotifications').doc(id).delete()
+            .then(() => {
+                showToast('Scheduled notification deleted');
+                loadScheduledNotifications();
+                // Remove from processed list
+                processedNotificationIds.delete(id);
+            })
+            .catch(error => {
+                console.error('Error deleting scheduled notification:', error);
+                showToast('Error deleting scheduled notification', false);
+            });
+    }
+}
+
+// Show specific page
+function showPage(page) {
+    pageContents.forEach(content => content.style.display = 'none');
+    document.getElementById(`${page}-page`).style.display = 'block';
+    
+    switch(page) {
+        case 'users': loadUsers(); break;
+        case 'orders': loadOrders(); break;
+        case 'services': loadServices(); break;
+        case 'payments': loadPayments(); break;
+        case 'notifications': 
+            loadNotifications(); 
+            loadScheduledNotifications();
+            break;
+        case 'settings': loadSettings(); break;
+        default: loadDashboardData(); break;
+    }
+}
+
+// Format Firebase date
+function formatFirebaseDate(timestamp) {
+    if (!timestamp) return 'N/A';
+    try {
+        const date = timestamp.toDate();
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    } catch (e) {
+        return 'N/A';
+    }
+}
+
+// Load dashboard data with REAL-TIME updates
+function loadDashboardData() {
+    // Load stats with real-time listeners
+    db.collection('users').onSnapshot(snapshot => {
+        document.getElementById('total-users').textContent = snapshot.size;
+        
+        // Calculate user trend (simple version)
+        const prevCount = parseInt(document.getElementById('total-users').getAttribute('data-prev') || snapshot.size);
+        const trend = snapshot.size > prevCount ? ((snapshot.size - prevCount) / prevCount * 100).toFixed(1) : 0;
+        document.getElementById('user-trend').innerHTML = `<i class="fas fa-arrow-up"></i> ${trend}%`;
+        document.getElementById('total-users').setAttribute('data-prev', snapshot.size);
+    });
+    
+    db.collection('orders').onSnapshot(snapshot => {
+        document.getElementById('total-orders').textContent = snapshot.size;
+        
+        // Calculate order trend
+        const prevCount = parseInt(document.getElementById('total-orders').getAttribute('data-prev') || snapshot.size);
+        const trend = snapshot.size > prevCount ? ((snapshot.size - prevCount) / prevCount * 100).toFixed(1) : 0;
+        document.getElementById('order-trend').innerHTML = `<i class="fas fa-arrow-up"></i> ${trend}%`;
+        document.getElementById('total-orders').setAttribute('data-prev', snapshot.size);
+    });
+    
+    db.collection('orders').where('status', '==', 'pending').onSnapshot(snapshot => {
+        document.getElementById('pending-orders').textContent = snapshot.size;
+    });
+    
+    db.collection('orders').where('status', '==', 'processing').onSnapshot(snapshot => {
+        document.getElementById('processing-orders').textContent = snapshot.size;
+    });
+    
+    db.collection('payments').where('status', '==', 'pending').onSnapshot(snapshot => {
+        document.getElementById('payment-pending').textContent = snapshot.size;
+    });
+    
+    // Load revenue for current month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    db.collection('payments')
+        .where('timestamp', '>=', startOfMonth)
+        .where('status', '==', 'completed')
+        .onSnapshot(snapshot => {
+            let total = 0;
+            snapshot.forEach(doc => total += parseFloat(doc.data().amount) || 0);
+            document.getElementById('total-revenue').textContent = total.toFixed(2) + ' ৳';
+        });
+    
+    // Load recent orders
+    db.collection('orders')
+        .orderBy('createdAt', 'desc')
+        .limit(5)
+        .onSnapshot(snapshot => {
+            const ordersList = document.getElementById('recent-orders');
+            ordersList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                ordersList.innerHTML = '<tr><td colspan="7" class="text-center">No orders found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    ordersList.innerHTML += `
+                        <tr>
+                            <td>${order.orderId || doc.id}</td>
+                            <td>${order.userId}</td>
+                            <td>${order.serviceTitle || order.service || 'N/A'}</td>
+                            <td>${order.amount || 0} ৳</td>
+                            <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'pending'}</span></td>
+                            <td>${formatFirebaseDate(order.createdAt)}</td>
+                            <td>
+                                <button class="btn btn-sm" onclick="viewOrder('${doc.id}')">View</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        });
+}
+
+// Load all orders for modal
+function loadAllOrders() {
+    showLoading('Loading orders...');
+    
+    db.collection('orders')
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(snapshot => {
+            hideLoading();
+            const allOrdersList = document.getElementById('all-orders-list');
+            allOrdersList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                allOrdersList.innerHTML = '<tr><td colspan="7" class="text-center">No orders found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    allOrdersList.innerHTML += `
+                        <tr>
+                            <td>${order.orderId || doc.id}</td>
+                            <td>${order.userId}</td>
+                            <td>${order.serviceTitle || order.service || 'N/A'}</td>
+                            <td>${order.amount || 0} ৳</td>
+                            <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'pending'}</span></td>
+                            <td>${formatFirebaseDate(order.createdAt)}</td>
+                            <td>
+                                <button class="btn btn-sm" onclick="viewOrder('${doc.id}')">View</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading all orders:', error);
+            document.getElementById('all-orders-list').innerHTML = '<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading orders</h3><p>Please try again later</p></td></tr>';
+            showToast('Error loading orders', false);
+        });
+}
+
+// View order details
+function viewOrder(orderId) {
+    showLoading('Loading order details...');
+    viewOrderModal.style.display = 'flex';
+    
+    db.collection('orders').doc(orderId).get()
+        .then(doc => {
+            hideLoading();
+            if (doc.exists) {
+                const order = doc.data();
+                const orderDetails = document.getElementById('order-details');
+                
+                // Format order data for display
+                const orderData = {
+                    'Order ID': doc.id,
+                    'User ID': order.userId || 'N/A',
+                    'Service': order.serviceTitle || order.service || 'N/A',
+                    'Amount': `${order.amount || 0} ৳`,
+                    'Status': `<span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'pending'}</span>`,
+                    'Phone Number': order.phoneNumber || 'N/A',
+                    'SIM Operator': order.simOperator || 'N/A'
+                };
+                
+                // Add all custom fields from the order (excluding unnecessary ones)
+                Object.keys(order).forEach(key => {
+                    if (!['userId', 'service', 'serviceTitle', 'amount', 'status', 'phoneNumber', 
+                         'simOperator', 'createdAt', 'updatedAt', 'completionMessage', 'buttonUrl', 'buttonName'].includes(key)) {
+                        orderData[key] = order[key];
+                    }
+                });
+                
+                // Add completion message if exists
+                if (order.completionMessage) {
+                    orderData['Completion Message'] = order.completionMessage;
+                }
+                
+                // Add button URL and button name if they exist
+                let buttonUrlHtml = '';
+                let buttonNameHtml = '';
+                
+                if (order.buttonUrl) {
+                    buttonUrlHtml = `
+                        <div class="form-group">
+                            <label>Button URL</label>
+                            <input type="text" class="form-control" id="button-url" value="${order.buttonUrl || ''}">
+                        </div>
+                    `;
+                }
+                
+                if (order.buttonName) {
+                    buttonNameHtml = `
+                        <div class="form-group">
+                            <label>Button Name</label>
+                                                        <input type="text" class="form-control" id="button-name" value="${order.buttonName || ''}">
+                        </div>
+                    `;
+                }
+                
+                let orderDetailsHTML = `
+                    <div class="order-details-grid">
+                        <div class="order-detail-card">
+                            <h4>Order Information</h4>
+                            ${Object.entries(orderData).map(([key, value]) => `
+                                <div class="order-detail-item">
+                                    <span class="order-detail-label">${key}:</span>
+                                    <span class="order-detail-value">${value}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select class="status-select" id="order-status-select" onchange="toggleCompletionMessage(this.value)">
+                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>Processing</option>
+                            <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div id="completion-message-box" class="completion-message-box" style="${order.status === 'completed' ? 'display: block;' : 'display: none;'}">
+                        <div class="form-group">
+                            <label>Completion Message</label>
+                            <textarea class="form-control" id="completion-message" rows="3" placeholder="Enter completion message for the user">${order.completionMessage || ''}</textarea>
+                        </div>
+                        ${buttonUrlHtml}
+                        ${buttonNameHtml}
+                    </div>
+                    <button class="btn btn-sm btn-success" onclick="updateOrderStatus('${doc.id}')">Update Status</button>
+                `;
+                
+                orderDetails.innerHTML = orderDetailsHTML;
+            } else {
+                orderDetails.innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Order not found</h3><p>The requested order does not exist</p></div>';
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error getting order:', error);
+            document.getElementById('order-details').innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading order</h3><p>Please try again later</p></div>';
+            showToast('Error loading order details', false);
+        });
+}
+
+// Toggle completion message box based on status selection
+function toggleCompletionMessage(status) {
+    const completionMessageBox = document.getElementById('completion-message-box');
+    
+    if (status === 'completed') {
+        completionMessageBox.style.display = 'block';
+    } else {
+        completionMessageBox.style.display = 'none';
+    }
+}
+
+// Update order status with notification
+function updateOrderStatus(orderId) {
+    const newStatus = document.getElementById('order-status-select').value;
+    const completionMessage = document.getElementById('completion-message')?.value || '';
+    const buttonUrl = document.getElementById('button-url')?.value || '';
+    const buttonName = document.getElementById('button-name')?.value || '';
+    
+    const updateData = {
+        status: newStatus,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // শুধুমাত্র completed স্ট্যাটাসের জন্য কমপ্লিশন মেসেজ সেট করুন
+    if (newStatus === 'completed') {
+        // ইউজার যা লিখেছে সেটাই ব্যবহার করুন, এমনকি যদি ফাঁকা হয়
+        updateData.completionMessage = completionMessage;
+        
+        // Add button URL and button name if they exist
+        if (buttonUrl) {
+            updateData.buttonUrl = buttonUrl;
+        }
+        
+        if (buttonName) {
+            updateData.buttonName = buttonName;
+        }
+    } else {
+        // অন্য স্ট্যাটাসের জন্য কমপ্লিশন মেসেজ মুছে ফেলুন
+        updateData.completionMessage = firebase.firestore.FieldValue.delete();
+        updateData.buttonUrl = firebase.firestore.FieldValue.delete();
+        updateData.buttonName = firebase.firestore.FieldValue.delete();
+    }
+    
+    showLoading('Updating order status...');
+    
+    db.collection('orders').doc(orderId).update(updateData)
+    .then(() => {
+        hideLoading();
+        showToast(`Order status updated to ${newStatus}`);
+        
+        // Get order details to send notification
+        db.collection('orders').doc(orderId).get()
+            .then(doc => {
+                if (doc.exists) {
+                    const order = doc.data();
+                    
+                    // Create notification
+                    const notification = {
+                        userId: order.userId,
+                        title: 'Order Status Update',
+                        message: newStatus === 'completed' ? (completionMessage || 'আপনার অর্ডার সফলভাবে সম্পন্ন হয়েছে!') : `Your order ${orderId} has been marked as ${newStatus}`,
+                        type: 'order',
+                        orderId: orderId,
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    // Add notification to Firestore
+                    return db.collection('notifications').add(notification);
+                }
+            })
+            .then(() => {
+                console.log('Notification sent successfully');
+            })
+            .catch(error => {
+                console.error('Error sending notification:', error);
+            });
+        
+        // Refresh UI
+        if (document.getElementById('orders-page').style.display === 'block') loadOrders();
+        if (document.getElementById('dashboard-page').style.display === 'block') loadDashboardData();
+        viewOrderModal.style.display = 'none';
+    })
+    .catch(error => {
+        hideLoading();
+        console.error('Error updating order status:', error);
+        showToast('Error updating order status', false);
+    });
+}
+
+// Load users
+function loadUsers() {
+    showLoading('Loading users...');
+    
+    db.collection('users').get()
+        .then(snapshot => {
+            hideLoading();
+            const usersList = document.getElementById('users-list');
+            usersList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                usersList.innerHTML = '<tr><td colspan="7" class="text-center">No users found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const isVerified = user.verified || false;
+                    
+                    usersList.innerHTML += `
+                        <tr>
+                            <td>${doc.id}</td>
+                            <td>
+                                <div class="user-with-badge">
+                                    ${user.name || 'N/A'}
+                                    ${isVerified ? '<i class="fas fa-check-circle verified-badge"></i>' : ''}
+                                </div>
+                            </td>
+                            <td>${user.email || 'N/A'}</td>
+                            <td>${user.phone || 'N/A'}</td>
+                            <td>${user.balance || 0} ৳</td>
+                            <td><span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">${user.status || 'active'}</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm" onclick="editUser('${doc.id}')">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteUser('${doc.id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading users:', error);
+            document.getElementById('users-list').innerHTML = '<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading users</h3><p>Please try again later</p></td></tr>';
+            showToast('Error loading users', false);
+        });
+}
+
+// Edit user
+function editUser(userId) {
+    showLoading('Loading user data...');
+    
+    db.collection('users').doc(userId).get()
+        .then(doc => {
+            hideLoading();
+            if (doc.exists) {
+                const user = doc.data();
+                document.getElementById('edit-user-id').value = userId;
+                document.getElementById('edit-user-name').value = user.name || '';
+                document.getElementById('edit-user-email').value = user.email || '';
+                document.getElementById('edit-user-phone').value = user.phone || '';
+                document.getElementById('edit-user-balance').value = user.balance || 0;
+                document.getElementById('edit-user-status').value = user.status || 'active';
+                document.getElementById('edit-user-verified').value = user.verified ? 'true' : 'false';
+                
+                editUserModal.style.display = 'flex';
+            } else {
+                showToast('User not found', false);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error getting user:', error);
+            showToast('Error loading user data', false);
+        });
+}
+
+// Save user changes
+function saveUserChanges() {
+    const userId = document.getElementById('edit-user-id').value;
+    const userData = {
+        name: document.getElementById('edit-user-name').value,
+        email: document.getElementById('edit-user-email').value,
+        phone: document.getElementById('edit-user-phone').value,
+        balance: parseFloat(document.getElementById('edit-user-balance').value) || 0,
+        status: document.getElementById('edit-user-status').value,
+        verified: document.getElementById('edit-user-verified').value === 'true'
+    };
+
+    showLoading('Saving user changes...');
+    
+    db.collection('users').doc(userId).update(userData)
+        .then(() => {
+            hideLoading();
+            showToast('User updated successfully');
+            editUserModal.style.display = 'none';
+            loadUsers();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error updating user:', error);
+            showToast('Error updating user', false);
+        });
+}
+
+// Delete user
+function deleteUser(userId) {
+    if (confirm(`Are you sure you want to delete this user? This action cannot be undone.`)) {
+        showLoading('Deleting user...');
+        
+        db.collection('users').doc(userId).delete()
+            .then(() => {
+                hideLoading();
+                showToast('User deleted successfully');
+                loadUsers();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error deleting user:', error);
+                showToast('Error deleting user', false);
+            });
+    }
+}
+
+// Load orders
+function loadOrders() {
+    showLoading('Loading orders...');
+    
+    db.collection('orders')
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(snapshot => {
+            hideLoading();
+            const ordersList = document.getElementById('orders-list');
+            ordersList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                ordersList.innerHTML = '<tr><td colspan="7" class="text-center">No orders found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const order = doc.data();
+                    ordersList.innerHTML += `
+                        <tr>
+                            <td>${order.orderId || doc.id}</td>
+                            <td>${order.userId}</td>
+                            <td>${order.serviceTitle || order.service || 'N/A'}</td>
+                            <td>${order.amount || 0} ৳</td>
+                            <td><span class="badge ${getStatusBadgeClass(order.status)}">${order.status || 'pending'}</span></td>
+                            <td>${formatFirebaseDate(order.createdAt)}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm" onclick="viewOrder('${doc.id}')">View</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading orders:', error);
+            document.getElementById('orders-list').innerHTML = '<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading orders</h3><p>Please try again later</p></td></tr>';
+            showToast('Error loading orders', false);
+        });
+}
+
+// Load services
+function loadServices() {
+    showLoading('Loading services...');
+    
+    // Load Free Services
+    db.collection('Free Service').get()
+        .then(snapshot => {
+            const servicesList = document.getElementById('services-list');
+            servicesList.innerHTML = '';
+            
+            // Add Free Services
+            if (snapshot.empty) {
+                servicesList.innerHTML = '<tr><td colspan="6" class="text-center">No free services found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const service = doc.data();
+                    servicesList.innerHTML += `
+                        <tr>
+                            <td>${doc.id}</td>
+                            <td>${service.name || 'N/A'}</td>
+                            <td>Free</td>
+                            <td>Free Service</td>
+                            <td><span class="badge ${service.status === 'active' ? 'badge-success' : 'badge-danger'}">${service.status || 'Active'}</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm" onclick="editService('${doc.id}', 'Free Service')">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteService('${doc.id}', 'Free Service')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            // Load Paid Services
+            return db.collection('Service').get();
+        })
+        .then(snapshot => {
+            hideLoading();
+            const servicesList = document.getElementById('services-list');
+            
+            // Add Paid Services
+            if (!snapshot.empty) {
+                snapshot.forEach(doc => {
+                    const service = doc.data();
+                    servicesList.innerHTML += `
+                        <tr>
+                            <td>${doc.id}</td>
+                            <td>${service.name || 'N/A'}</td>
+                            <td>${service.price || 0} ৳</td>
+                            <td>${service.category || 'General'}</td>
+                            <td><span class="badge ${service.status === 'active' ? 'badge-success' : 'badge-danger'}">${service.status || 'Active'}</span></td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm" onclick="editService('${doc.id}', 'Service')">Edit</button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteService('${doc.id}', 'Service')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            if (servicesList.innerHTML === '') {
+                servicesList.innerHTML = '<tr><td colspan="6" class="text-center">No services found</td></tr>';
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading services:', error);
+            document.getElementById('services-list').innerHTML = '<tr><td colspan="6" class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading services</h3><p>Please try again later</p></td></tr>';
+            showToast('Error loading services', false);
+        });
+}
+
+// Edit service
+function editService(serviceId, collectionName) {
+    showLoading('Loading service data...');
+    
+    db.collection(collectionName).doc(serviceId).get()
+        .then(doc => {
+            hideLoading();
+            if (doc.exists) {
+                const service = doc.data();
+                document.getElementById('edit-service-id').value = doc.id;
+                document.getElementById('edit-service-collection').value = collectionName;
+                document.getElementById('edit-service-name').value = service.name || '';
+                document.getElementById('edit-service-price').value = service.price || 0;
+                document.getElementById('edit-service-category').value = service.category || '';
+                document.getElementById('edit-service-status').value = service.status || 'active';
+                
+                editServiceModal.style.display = 'flex';
+            } else {
+                showToast('Service not found', false);
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error getting service:', error);
+            showToast('Error loading service data', false);
+        });
+}
+
+// Save service changes
+function saveServiceChanges() {
+    const serviceId = document.getElementById('edit-service-id').value;
+    const collectionName = document.getElementById('edit-service-collection').value;
+    const serviceData = {
+        name: document.getElementById('edit-service-name').value,
+        price: parseFloat(document.getElementById('edit-service-price').value) || 0,
+        category: document.getElementById('edit-service-category').value,
+        status: document.getElementById('edit-service-status').value
+    };
+
+    showLoading('Saving service changes...');
+    
+    db.collection(collectionName).doc(serviceId).update(serviceData)
+        .then(() => {
+            hideLoading();
+            showToast('Service updated successfully');
+            editServiceModal.style.display = 'none';
+            loadServices();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error updating service:', error);
+            showToast('Error updating service', false);
+        });
+}
+
+// Add new service
+function addNewService() {
+    const collectionName = document.getElementById('add-service-collection').value;
+    const serviceData = {
+        name: document.getElementById('add-service-name').value,
+        color: document.getElementById('add-service-color').value,
+        icon: document.getElementById('add-service-icon').value,
+        link: document.getElementById('add-service-link').value,
+        status: document.getElementById('add-service-status').value,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Only add price for paid services
+    if (collectionName === 'Service') {
+        serviceData.price = parseFloat(document.getElementById('add-service-price').value) || 0;
+    }
+
+    showLoading('Adding service...');
+    
+    db.collection(collectionName).add(serviceData)
+        .then(() => {
+            hideLoading();
+            showToast('Service added successfully');
+            addServiceModal.style.display = 'none';
+            // Reset form
+            document.getElementById('add-service-form').reset();
+            loadServices();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error adding service:', error);
+            showToast('Error adding service', false);
+        });
+}
+
+// Delete service
+function deleteService(serviceId, collectionName) {
+    if (confirm(`Are you sure you want to delete this service? This action cannot be undone.`)) {
+        showLoading('Deleting service...');
+        
+        db.collection(collectionName).doc(serviceId).delete()
+            .then(() => {
+                hideLoading();
+                showToast('Service deleted successfully');
+                loadServices();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Error deleting service:', error);
+                showToast('Error deleting service', false);
+            });
+    }
+}
+
+// Load payments
+function loadPayments() {
+    showLoading('Loading payments...');
+    
+    db.collection('payments')
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then(snapshot => {
+            hideLoading();
+            const paymentsList = document.getElementById('payments-list');
+            paymentsList.innerHTML = '';
+            
+            if (snapshot.empty) {
+                paymentsList.innerHTML = '<tr><td colspan="7" class="text-center">No payments found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const payment = doc.data();
+                    const isPending = payment.status === 'pending';
+                    
+                    paymentsList.innerHTML += `
+                        <tr>
+                            <td>${payment.transactionId || doc.id}</td>
+                            <td>${payment.userId}</td>
+                            <td>${payment.amount || 0} ৳</td>
+                            <td>${payment.paymentMethod || 'N/A'}</td>
+                            <td><span class="badge ${payment.status === 'completed' ? 'badge-success' : 
+                                payment.status === 'declined' ? 'badge-danger' : 'badge-warning'}">
+                                ${payment.status || 'pending'}
+                            </span></td>
+                            <td>${formatFirebaseDate(payment.timestamp)}</td>
+                            <td>
+                                <div class="payment-actions">
+                                    <button class="btn btn-sm" onclick="viewPayment('${doc.id}')">View</button>
+                                    ${isPending ? `
+                                        <button class="btn btn-sm btn-success" onclick="approvePayment('${doc.id}', '${payment.userId}', ${payment.amount || 0})">Approve</button>
+                                        <button class="btn btn-sm btn-danger" onclick="declinePayment('${doc.id}', '${payment.userId}', ${payment.amount || 0})">Decline</button>
+                                    ` : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading payments:', error);
+            document.getElementById('payments-list').innerHTML = '<tr><td colspan="7" class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading payments</h3><p>Please try again later</p></td></tr>';
+            showToast('Error loading payments', false);
+        });
+}
+
+// View payment
+function viewPayment(paymentId) {
+    showLoading('Loading payment details...');
+    viewOrderModal.style.display = 'flex';
+    
+    db.collection('payments').doc(paymentId).get()
+        .then(doc => {
+            hideLoading();
+            if (doc.exists) {
+                const payment = doc.data();
+                const paymentDetails = document.getElementById('order-details');
+                
+                paymentDetails.innerHTML = `
+                    <div class="order-details-grid">
+                        <div class="order-detail-card">
+                            <h4>Payment Information</h4>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Payment ID:</span>
+                                <span class="order-detail-value">${doc.id}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Transaction ID:</span>
+                                <span class="order-detail-value">${payment.transactionId || 'N/A'}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">User ID:</span>
+                                <span class="order-detail-value">${payment.userId}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Amount:</span>
+                                <span class="order-detail-value">${payment.amount || 0} ৳</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label>Method:</span>
+                                <span class="order-detail-value">${payment.paymentMethod || 'N/A'}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Payment Number:</span>
+                                <span class="order-detail-value">${payment.paymentNumber || 'N/A'}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Status:</span>
+                                <span class="order-detail-value"><span class="badge ${payment.status === 'completed' ? 'badge-success' : 
+                                    payment.status === 'declined' ? 'badge-danger' : 'badge-warning'}">
+                                    ${payment.status || 'pending'}
+                                </span></span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Transaction Date:</span>
+                                <span class="order-detail-value">${formatFirebaseDate(payment.timestamp)}</span>
+                            </div>
+                            <div class="order-detail-item">
+                                <span class="order-detail-label">Processed At:</span>
+                                <span class="order-detail-value">${formatFirebaseDate(payment.processedAt) || 'Not processed'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('order-details').innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Payment not found</h3><p>The requested payment does not exist</p></div>';
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error getting payment:', error);
+            document.getElementById('order-details').innerHTML = '<div class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading payment</h3><p>Please try again later</p></div>';
+            showToast('Error loading payment details', false);
+        });
+}
+
+// Approve payment
+function approvePayment(paymentId, userId, amount) {
+    if (confirm(`Are you sure you want to approve this payment of ${amount}৳?`)) {
+        showLoading('Approving payment...');
+        
+        // Update payment status
+        db.collection('payments').doc(paymentId).update({
+            status: 'completed',
+            processedAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            // Update user balance
+            const userRef = db.collection('users').doc(userId);
+            
+            db.runTransaction(transaction => {
+                return transaction.get(userRef).then(userDoc => {
+                    if (!userDoc.exists) throw "User document does not exist!";
+                    
+                    const newBalance = (userDoc.data().balance || 0) + parseFloat(amount);
+                    transaction.update(userRef, { balance: newBalance });
+                    
+                    // Create notification
+                    const notification = {
+                        userId: userId,
+                        title: 'Payment Approved',
+                        message: `Your payment of ${amount}৳ has been approved. New balance: ${newBalance}৳`,
+                        type: 'payment',
+                        paymentId: paymentId,
+                        read: false,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    };
+                    
+                    return db.collection('notifications').add(notification);
+                    });
+            })
+            .then(() => {
+                hideLoading();
+                showToast('Payment approved and user balance updated');
+                loadPayments();
+                loadDashboardData();
+            })
+            .catch(error => {
+                hideLoading();
+                console.error('Transaction failed: ', error);
+                showToast('Error processing payment', false);
+            });
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error approving payment:', error);
+            showToast('Error approving payment', false);
+        });
+    }
+}
+
+// Decline payment
+function declinePayment(paymentId, userId, amount) {
+    if (confirm(`Are you sure you want to decline this payment of ${amount}৳?`)) {
+        showLoading('Declining payment...');
+        
+        db.collection('payments').doc(paymentId).update({
+            status: 'declined',
+            processedAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            // Create notification
+            const notification = {
+                userId: userId,
+                title: 'Payment Declined',
+                message: `Your payment of ${amount}৳ has been declined. Please contact support.`,
+                type: 'payment',
+                paymentId: paymentId,
+                read: false,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+            
+            return db.collection('notifications').add(notification);
+        })
+        .then(() => {
+            hideLoading();
+            showToast('Payment declined');
+            loadPayments();
+            loadDashboardData();
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error declining payment:', error);
+            showToast('Error declining payment', false);
+        });
+    }
+}
+
+// Load notifications history
+function loadNotifications() {
+    showLoading('Loading notifications...');
+    
+    db.collection('notifications')
+        .where('type', '==', 'admin')
+        .orderBy('createdAt', 'desc')
+        .get()
+        .then(snapshot => {
+            hideLoading();
+            const notificationsHistory = document.getElementById('notifications-history');
+            notificationsHistory.innerHTML = '';
+            
+            if (snapshot.empty) {
+                notificationsHistory.innerHTML = '<tr><td colspan="5" class="text-center">No notifications found</td></tr>';
+            } else {
+                snapshot.forEach(doc => {
+                    const notification = doc.data();
+                    notificationsHistory.innerHTML += `
+                        <tr>
+                            <td>${notification.title || 'N/A'}</td>
+                            <td>${notification.message || 'N/A'}</td>
+                            <td>${notification.userId ? 'Specific User' : 'All Users'}</td>
+                            <td>${formatFirebaseDate(notification.createdAt)}</td>
+                            <td><span class="badge ${notification.read ? 'badge-success' : 'badge-warning'}">${notification.read ? 'Read' : 'Unread'}</span></td>
+                        </tr>
+                    `;
+                });
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading notifications:', error);
+            document.getElementById('notifications-history').innerHTML = '<tr><td colspan="5" class="error-state"><i class="fas fa-exclamation-circle"></i><h3>Error loading notifications</h3><p>Please try again later</p></td></tr>';
+            showToast('Error loading notifications', false);
+        });
+}
+
+// Load settings
+function loadSettings() {
+    showLoading('Loading settings...');
+    
+    db.collection('settings').doc('general').get()
+        .then(doc => {
+            hideLoading();
+            if (doc.exists) {
+                const settings = doc.data();
+                document.getElementById('site-title').value = settings.siteTitle || '';
+                document.getElementById('admin-email').value = settings.adminEmail || '';
+                document.getElementById('currency').value = settings.currency || 'BDT';
+                document.getElementById('timezone').value = settings.timezone || 'Asia/Dhaka';
+                document.getElementById('header-logo-url').value = settings.headerLogoUrl || '';
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error loading settings:', error);
+            showToast('Error loading settings', false);
+        });
+}
+
+// Save settings
+function saveSettings() {
+    const settingsData = {
+        siteTitle: document.getElementById('site-title').value,
+        adminEmail: document.getElementById('admin-email').value,
+        currency: document.getElementById('currency').value,
+        timezone: document.getElementById('timezone').value,
+        headerLogoUrl: document.getElementById('header-logo-url').value,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    showLoading('Saving settings...');
+    
+    db.collection('settings').doc('general').set(settingsData, { merge: true })
+        .then(() => {
+            hideLoading();
+            showToast('Settings saved successfully');
+        })
+        .catch(error => {
+            hideLoading();
+            console.error('Error saving settings:', error);
+            showToast('Error saving settings', false);
+        });
+}
+
+// Get status badge class
+function getStatusBadgeClass(status) {
+    switch(status) {
+        case 'completed': return 'badge-completed';
+        case 'processing': return 'badge-processing';
+        case 'pending': return 'badge-pending';
+        case 'cancelled': return 'badge-cancelled';
+        default: return 'badge-info';
+    }
+}
+
+// Show toast notification
+function showToast(message, isSuccess = true, type = '') {
+    toastMessage.textContent = message;
+    
+    // Reset classes
+    toast.className = 'toast';
+    
+    // Add appropriate class based on type
+    if (type === 'error') {
+        toast.classList.add('error');
+        toastIcon.className = 'fas fa-exclamation-circle';
+    } else if (type === 'warning') {
+        toast.classList.add('warning');
+        toastIcon.className = 'fas fa-exclamation-triangle';
+    } else if (type === 'info') {
+        toast.classList.add('info');
+        toastIcon.className = 'fas fa-info-circle';
+    } else if (isSuccess) {
+        toastIcon.className = 'fas fa-check-circle';
+    } else {
+        toast.classList.add('error');
+        toastIcon.className = 'fas fa-exclamation-circle';
+    }
+    
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
+
+// Initialize the admin panel when DOM is loaded
+document.addEventListener('DOMContentLoaded', initAdminPanel);
+</script>
+</body>
+</html>

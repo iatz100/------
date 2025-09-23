@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Splash Screen</title>
+  <style>
+    /* Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #fe4fb5, #e3e650);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Splash Container */
+    .splash {
+      text-align: center;
+      color: white;
+      padding: 120px;
+    }
+
+    /* Logo or Title */
+    .splash h1 {
+      font-size: 2rem;
+      margin-bottom: 20px;
+      animation: fadeIn 1.5s ease-in-out;
+        margin-bottom: 100px;
+    }
+
+    /* Loading Spinner */
+    .loader {
+      border: 6px solid rgba(255, 255, 255, 0.2);
+      border-top: 6px solid #fff;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      margin: 0 auto;
+      animation: spin 1s linear infinite;
+      margin-bottom: 100px;
+    }
+
+    /* Animations */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash Screen -->
+  <div class="splash">
+    <h1>iATZ <br> Admin Panel</h1>
+    <div class="loader"></div>
+    <p style="margin-top:15px;">Loading Dashboard...</p>
+  </div>
+
+  <script>
+    // 3 second auto redirect
+    setTimeout(() => {
+      window.location.href = "dashboard.html"; 
+    }, 3000);
+  </script>
+</body>
+</html>
